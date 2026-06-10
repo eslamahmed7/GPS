@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تهانينا! مكافآتك وهداياك جاهزة</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="confetti-wrapper" id="confettiWrapper"></div>
+
+  <main class="page">
+    <div class="gifts-page">
+      <header class="gifts-hero">
+        <h1 class="gifts-hero__title">تهانينا! 🎉</h1>
+        <p class="gifts-hero__desc">لقد تم التحقق من موقعك بنجاح، وتأهلت للحصول على الحزمة التالية من المكافآت والهدايا الحصرية المتاحة في منطقتك اليوم.</p>
+      </header>
+
+      <div class="gifts-grid">
+        <!-- Gift Card 1: Amazon -->
+        <div class="gift-card">
+          <span class="gift-card__badge">نشط</span>
+          <div class="gift-card__icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+          </div>
+          <h2 class="gift-card__title">كوبون خصم Amazon</h2>
+          <p class="gift-card__desc">خصم يصل إلى 50% على جميع مشترياتك القادمة من المتجر.</p>
+          <div class="gift-card__code-container">
+            <span id="code1">AMZ-50-SPECIAL</span>
+          </div>
+          <button class="btn btn--copy-code" onclick="copyGiftCode('code1', this)">نسخ الكوبون</button>
+        </div>
+
+        <!-- Gift Card 2: Google Play -->
+        <div class="gift-card">
+          <span class="gift-card__badge">شائع</span>
+          <div class="gift-card__icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+          </div>
+          <h2 class="gift-card__title">بطاقة Google Play بقيمة $15</h2>
+          <p class="gift-card__desc">كود رصيد مجاني لشحن حسابك لشراء الألعاب والتطبيقات المدفوعة.</p>
+          <div class="gift-card__code-container">
+            <span id="code2">GPLAY-15-GIFT</span>
+          </div>
+          <button class="btn btn--copy-code" onclick="copyGiftCode('code2', this)">نسخ الكوبون</button>
+        </div>
+
+        <!-- Gift Card 3: Noon -->
+        <div class="gift-card">
+          <span class="gift-card__badge">جديد</span>
+          <div class="gift-card__icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+          </div>
+          <h2 class="gift-card__title">كوبون Noon للتوصيل المجاني</h2>
+          <p class="gift-card__desc">كود يمنحك توصيلاً مجانياً بالكامل لأي طلبية من المتجر.</p>
+          <div class="gift-card__code-container">
+            <span id="code3">NOON-FREE-DELIV</span>
+          </div>
+          <button class="btn btn--copy-code" onclick="copyGiftCode('code3', this)">نسخ الكوبون</button>
+        </div>
+      </div>
+
+      <div class="footer-link">
+        <a href="index.html">العودة للرئيسية</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Toast notification function
+    function showToast(message, type) {
+      var container = document.getElementById('toastContainer');
+      var toast = document.createElement('div');
+      toast.className = 'toast toast--' + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(function () {
+        toast.classList.add('removing');
+        setTimeout(function () { toast.remove(); }, 300);
+      }, 3000);
+    }
+
+    // Function to copy code and update UI state
+    function copyGiftCode(elementId, button) {
+      var codeText = document.getElementById(elementId).textContent;
+      navigator.clipboard.writeText(codeText).then(function() {
+        showToast('تم نسخ الكوبون بنجاح!', 'success');
+        
+        // Update button status
+        var originalText = button.textContent;
+        button.textContent = 'تم النسخ! ✓';
+        button.classList.add('copied');
+        
+        setTimeout(function() {
+          button.textContent = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(function() {
+        showToast('فشل النسخ تلقائياً، يرجى تحديده ونسخه يدوياً.', 'error');
+      });
+    }
+
+    // Confetti generator
+    function createConfetti() {
+      var wrapper = document.getElementById('confettiWrapper');
+      var colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#e11d48'];
+      
+      for (var i = 0; i < 50; i++) {
+        var piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        
+        // Randomize placement, animation delay, color and size
+        piece.style.left = Math.random() * 100 + 'vw';
+        piece.style.animationDelay = Math.random() * 3 + 's';
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        // Random dimensions
+        var size = Math.random() * 8 + 6;
+        piece.style.width = size + 'px';
+        piece.style.height = size + 'px';
+        
+        // Random shape (some circles, some squares)
+        if (Math.random() > 0.5) {
+          piece.style.borderRadius = '50%';
+        }
+        
+        wrapper.appendChild(piece);
+      }
+    }
+
+    // Trigger confetti on load
+    window.addEventListener('load', createConfetti);
+  </script>
+</body>
+</html>

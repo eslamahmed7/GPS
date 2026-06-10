@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة الإدارة - Location Share</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="loader-overlay" id="loader">
+    <div style="text-align:center">
+      <div class="loader-spinner"></div>
+      <p class="loader-text">جاري التحميل...</p>
+    </div>
+  </div>
+
+  <!-- Login View -->
+  <main class="page" id="loginView">
+    <div class="login-card">
+      <h1 class="login-card__title">دخول لوحة الإدارة</h1>
+      <div class="input-group">
+        <label for="adminPass">كلمة المرور</label>
+        <input type="password" id="adminPass" placeholder="أدخل كلمة المرور" autocomplete="current-password" />
+        <p class="input-error" id="loginError">كلمة المرور غير صحيحة</p>
+      </div>
+      <button class="btn btn--primary" onclick="adminLogin()">دخول</button>
+      <div class="footer-link">
+        <a href="index.html">العودة للصفحة الرئيسية</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Dashboard View -->
+  <div class="admin-page" id="dashboardView" style="display:none">
+    <header class="admin-header">
+      <h1 class="admin-header__title">لوحة الإدارة</h1>
+      <div class="admin-header__actions">
+        <button class="btn btn--outline btn--sm" onclick="loadLocations()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          تحديث
+        </button>
+        <button class="btn btn--danger btn--sm" onclick="adminLogout()">خروج</button>
+      </div>
+    </header>
+
+    <div class="stats" id="statsArea"></div>
+
+    <div class="table-wrapper">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>وقت التسجيل</th>
+              <th>خط العرض</th>
+              <th>خط الطول</th>
+              <th>الدقة (م)</th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="locationsBody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="emptyState" style="display:none">
+        <div class="empty-state__icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <p class="empty-state__text">لا توجد مواقع مسجلة بعد</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script type="module" src="supabase.js"></script>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>
