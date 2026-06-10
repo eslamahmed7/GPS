@@ -61,8 +61,9 @@ async function shareLocation() {
           window.location.href = 'gifts.html';
         }, 1500);
       } catch (err) {
+        console.error("Supabase Error:", err);
         hideLoader();
-        showToast('فشل في الاتصال، اضغط للمحاولة مجدداً', 'error');
+        showToast('فشل الاتصال: ' + (err.message || err.details || 'خطأ في قاعدة البيانات'), 'error');
         btn.disabled = false;
         btn.textContent = 'إعادة المحاولة للحصول على الهدايا';
         btn.onclick = shareLocation;
