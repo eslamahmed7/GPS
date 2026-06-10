@@ -1,3 +1,5 @@
+const supabaseClient = window.supabaseClient;
+
 function showToast(message, type) {
   var container = document.getElementById('toastContainer');
   var toast = document.createElement('div');

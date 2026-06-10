@@ -1,5 +1,8 @@
+const supabaseClient = window.supabaseClient;
+
 var ADMIN_PASSWORD = 'admin123';
 var AUTH_KEY = 'ls_admin_auth';
+
 
 function showToast(message, type) {
   var container = document.getElementById('toastContainer');
