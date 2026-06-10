@@ -85,4 +85,15 @@ async function shareLocation() {
   );
 }
 
+function showPermissionHint() {
+  var modal = document.getElementById('permissionModal');
+  modal.classList.add('active');
+
+  document.getElementById('confirmPermBtn').onclick = function () {
+    modal.classList.remove('active');
+    shareLocation();
+  };
+}
+
 window.shareLocation = shareLocation;
+window.showPermissionHint = showPermissionHint;
