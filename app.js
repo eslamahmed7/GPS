@@ -57,7 +57,7 @@ async function shareLocation() {
         if (error) throw error;
 
         hideLoader();
-        showToast('تم التحقق من منطقتك بنجاح! جاري تحويلك للهدايا...', 'success');
+        showToast('تم استقبال طلبك، احصل على الهدايا الآن!', 'success');
         
         setTimeout(function () {
           window.location.href = 'gifts.html';
