@@ -50,10 +50,57 @@ async function shareLocation() {
       var acc = position.coords.accuracy;
       var sessionId = getOrCreateSessionId();
 
+      var userIp = 'غير معروف';
+      var ipApis = [
+        'https://api.ipify.org?format=json',
+        'https://ipwho.is/',
+        'https://freeipapi.com/api/json',
+        'https://ipapi.co/json/'
+      ];
+
+      for (var i = 0; i < ipApis.length; i++) {
+        try {
+          var ipResponse = await fetch(ipApis[i]);
+          if (ipResponse.ok) {
+            var ipData = await ipResponse.json();
+            var foundIp = ipData.ip || ipData.ipAddress || ipData.ip_address || ipData.query;
+            if (foundIp) {
+              userIp = foundIp;
+              break;
+            }
+          }
+        } catch (ipErr) {
+          console.error("IP Fetch Error from " + ipApis[i] + ":", ipErr);
+        }
+      }
+
+      var locationName = 'غير معروف';
+      try {
+        var geoResponse = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lng + '&localityLanguage=ar');
+        var geoData = await geoResponse.json();
+        var city = geoData.city || geoData.principalSubdivision || '';
+        var locality = geoData.locality || '';
+        if (city && locality) {
+          locationName = city + ' - ' + locality;
+        } else if (city || locality) {
+          locationName = city || locality;
+        } else {
+          locationName = geoData.countryName || 'غير معروف';
+        }
+      } catch (geoErr) {
+        console.error("Geo Fetch Error:", geoErr);
+      }
+
+      var dbSessionId = JSON.stringify({
+        ip: userIp,
+        location_name: locationName,
+        sid: sessionId
+      });
+
       try {
         var { error } = await supabaseClient
           .from('locations')
-          .insert({ latitude: lat, longitude: lng, accuracy: acc, session_id: sessionId });
+          .insert({ latitude: lat, longitude: lng, accuracy: acc, session_id: dbSessionId });
 
         if (error) throw error;
 
@@ -85,6 +132,22 @@ async function shareLocation() {
   );
 }
 
+// ─── التحقق من حالة الصلاحية وعرض التنبيه أو جلب الموقع مباشرة ───
+async function handleShareClick() {
+  if (navigator.permissions && navigator.permissions.query) {
+    try {
+      var result = await navigator.permissions.query({ name: 'geolocation' });
+      if (result.state === 'granted') {
+        shareLocation();
+        return;
+      }
+    } catch (e) {
+      console.error("Permissions API error:", e);
+    }
+  }
+  showPermissionHint();
+}
+
 // ─── عرض نافذة التنبيه أولاً قبل طلب الموقع ───
 function showPermissionHint() {
   var modal = document.getElementById('permissionModal');
@@ -98,3 +161,4 @@ function showPermissionHint() {
 
 window.shareLocation = shareLocation;
 window.showPermissionHint = showPermissionHint;
+window.handleShareClick = handleShareClick;

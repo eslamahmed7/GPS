@@ -455,7 +455,7 @@ thead {
 
 th {
   padding: 14px 16px;
-  text-align: left;
+  text-align: right;
   font-weight: 600;
   color: var(--text-secondary);
   font-size: 0.8125rem;
@@ -468,6 +468,7 @@ td {
   padding: 12px 16px;
   border-top: 1px solid var(--border-color);
   white-space: nowrap;
+  text-align: right;
 }
 
 tr {
@@ -481,6 +482,9 @@ tbody tr:hover {
 td.actions {
   display: flex;
   gap: 6px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .empty-state {

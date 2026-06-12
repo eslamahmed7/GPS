@@ -94,6 +94,66 @@ function renderStats(data) {
     '<div class="stat-card"><div class="stat-card__value">' + avgAcc + ' م</div><div class="stat-card__label">متوسط الدقة</div></div>';
 }
 
+var locationCache = {};
+
+function parseSessionData(row) {
+  var ip = '-';
+  var locationName = 'جاري التحديد...';
+  var isOldRecord = true;
+
+  try {
+    var parsed = JSON.parse(row.session_id);
+    if (parsed && typeof parsed === 'object') {
+      ip = parsed.ip || '-';
+      locationName = parsed.location_name || '-';
+      isOldRecord = false;
+    }
+  } catch (e) {
+    ip = '-';
+    locationName = 'جاري التحديد...';
+    isOldRecord = true;
+  }
+
+  return { ip, locationName, isOldRecord };
+}
+
+async function fetchOldRecordLocation(lat, lng, elementId) {
+  var cacheKey = lat.toFixed(5) + ',' + lng.toFixed(5);
+  if (locationCache[cacheKey]) {
+    var el = document.getElementById(elementId);
+    if (el) el.textContent = locationCache[cacheKey];
+    return;
+  }
+
+  try {
+    var res = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lng + '&localityLanguage=ar');
+    var geoData = await res.json();
+    var city = geoData.city || geoData.principalSubdivision || '';
+    var locality = geoData.locality || '';
+    var locationName = 'غير معروف';
+    if (city && locality) {
+      locationName = city + ' - ' + locality;
+    } else if (city || locality) {
+      locationName = city || locality;
+    } else {
+      locationName = geoData.countryName || 'غير معروف';
+    }
+
+    locationCache[cacheKey] = locationName;
+
+    var el = document.getElementById(elementId);
+    if (el) {
+      el.textContent = locationName;
+    }
+  } catch (err) {
+    console.error("Failed to reverse geocode old record:", err);
+    var el = document.getElementById(elementId);
+    if (el) {
+      el.textContent = lat.toFixed(4) + ', ' + lng.toFixed(4);
+    }
+  }
+}
+
 function renderTable(data) {
   var tbody = document.getElementById('locationsBody');
   var empty = document.getElementById('emptyState');
@@ -106,11 +166,19 @@ function renderTable(data) {
 
   empty.style.display = 'none';
   tbody.innerHTML = data.map(function (row, i) {
+    var sessionInfo = parseSessionData(row);
+
+    if (sessionInfo.isOldRecord) {
+      setTimeout(function () {
+        fetchOldRecordLocation(row.latitude, row.longitude, 'loc-cell-' + row.id);
+      }, 50 * i);
+    }
+
     return '<tr>' +
       '<td>' + (i + 1) + '</td>' +
       '<td>' + formatDate(row.created_at) + '</td>' +
-      '<td>' + row.latitude.toFixed(6) + '</td>' +
-      '<td>' + row.longitude.toFixed(6) + '</td>' +
+      '<td>' + sessionInfo.ip + '</td>' +
+      '<td id="loc-cell-' + row.id + '">' + sessionInfo.locationName + '</td>' +
       '<td>' + Math.round(row.accuracy) + '</td>' +
       '<td class="actions">' +
         '<a class="btn btn--outline btn--sm" href="https://maps.google.com/?q=' + row.latitude + ',' + row.longitude + '" target="_blank" rel="noopener">خريطة</a>' +
